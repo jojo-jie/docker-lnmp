@@ -1,0 +1,54 @@
+#网络配置
+networks:
+  backend:
+    driver: bridge
+services:
+  myredis:
+    build: ./redis/
+    container_name: "myredis"
+    restart: always
+    ports:
+      - 6379:6379
+    environment:
+      ENABLE_BITOP: 'ON'
+  myphp:
+    build: ./php/
+    container_name: "myphp"
+    restart: always
+    volumes:      #挂載目录
+      - ~/workspace/php:/var/www:cached
+    links:
+      - "myredis"
+      - "mymemcache"
+  mynginx:
+    build: ./nginx/
+    container_name: "mynginx"
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:      #挂載目录
+      - ~/workspace/php:/usr/share/nginx/www:cached
+      - ~/docker/compose/nginx/conf.d:/etc/nginx/conf.d
+      - ~/docker/compose/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ~/docker/compose/nginx/fastcgi_params:/etc/nginx/fastcgi_params
+      - ~/docker/compose/nginx/logs:/var/log/nginx
+    links:
+      - "myphp"
+  mymemcache:
+    build: ./memcache/
+    container_name: "mymemcache"
+    restart: always
+    ports:
+      - 11211:11211
+  mysql:
+    build: ./mysql/
+    container_name: "mysql"
+    restart: always
+    ports:
+      - 3306:3306
+    volumes:      #挂載目录
+      - ~/docker/compose/mysql/lib/mysql:/var/lib/mysql
+      - ~/docker/compose/mysql/conf.d:/etc/mysql/conf.d
+    environment:
+      MYSQL_ROOT_PASSWORD: uUiknmbGFDBIu9801827654
